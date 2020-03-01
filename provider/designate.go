@@ -53,7 +53,7 @@ const (
 // interface between provider and OpenStack DNS API
 type designateClientInterface interface {
 	// ForEachZone calls handler for each zone managed by the Designate
-	ForEachZone(handler func(zone *zones.Zone) error) error
+	ForEachZonePub(handler func(zone *zones.Zone) error) error
 	ForEachZonePriv(handler func(zone *zones.Zone) error) error
 
 	// ForEachRecordSet calls handler for each recordset in the given DNS zone
@@ -167,8 +167,8 @@ func createDesignateServiceClient() (*gophercloud.ServiceClient, error) {
 }
 
 // ForEachZone calls handler for each zone managed by the Designate
-func (c designateClient) ForEachZone(handler func(zone *zones.Zone) error) error {
-	pager := zones.List(c.serviceClient, zones.ListOpts{})
+func (c designateClient) ForEachZonePub(handler func(zone *zones.Zone) error) error {
+	pager := zones.List(c.serviceClient, zones.ListOpts{Type: "public"})
 	return pager.EachPage(
 		func(page pagination.Page) (bool, error) {
 			list, err := zones.ExtractZones(page)
@@ -292,7 +292,7 @@ func canonicalizeDomainName(d string) string {
 func (p designateProvider) getZones() (map[string]string, error) {
 	result := map[string]string{}
 
-	err := p.client.ForEachZone(
+	err := p.client.ForEachZonePub(
 		func(zone *zones.Zone) error {
 			if zone.Type != "" && strings.ToUpper(zone.Type) != "PRIMARY" || zone.Status != "ACTIVE" {
 				return nil
