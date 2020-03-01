@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/pkg/tlsutils"
 	"sigs.k8s.io/external-dns/plan"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -319,7 +320,7 @@ func (p designateProvider) getZones() (map[string]string, error) {
 			return nil
 		},
 	)
-	return result, err
+	return result, multierr.Combine(err, err1)
 }
 
 // finds best suitable DNS zone for the hostname
