@@ -53,6 +53,7 @@ const (
 type designateClientInterface interface {
 	// ForEachZone calls handler for each zone managed by the Designate
 	ForEachZone(handler func(zone *zones.Zone) error) error
+	ForEachZonePriv(handler func(zone *zones.Zone) error) error
 
 	// ForEachRecordSet calls handler for each recordset in the given DNS zone
 	ForEachRecordSet(zoneID string, handler func(recordSet *recordsets.RecordSet) error) error
@@ -184,6 +185,26 @@ func (c designateClient) ForEachZone(handler func(zone *zones.Zone) error) error
 	)
 }
 
+func (c designateClient) ForEachZonePriv(handler func(zone *zones.Zone) error) error {
+	pager := zones.List(c.serviceClient, zones.ListOpts{Type: "private"})
+	return pager.EachPage(
+		func(page pagination.Page) (bool, error) {
+			list, err := zones.ExtractZones(page)
+			if err != nil {
+				return false, err
+			}
+			for _, zone := range list {
+				err := handler(&zone)
+				if err != nil {
+					return false, err
+				}
+			}
+			return true, nil
+		},
+	)
+}
+
+
 // ForEachRecordSet calls handler for each recordset in the given DNS zone
 func (c designateClient) ForEachRecordSet(zoneID string, handler func(recordSet *recordsets.RecordSet) error) error {
 	pager := recordsets.ListByZone(c.serviceClient, zoneID, recordsets.ListOpts{})
@@ -284,7 +305,20 @@ func (p designateProvider) getZones() (map[string]string, error) {
 			return nil
 		},
 	)
+	err1 := p.client.ForEachZonePriv(
+		func(zone *zones.Zone) error {
+			if zone.Type != "" && strings.ToUpper(zone.Type) != "PRIMARY" || zone.Status != "ACTIVE" {
+				return nil
+			}
 
+			zoneName := canonicalizeDomainName(zone.Name)
+			if !p.domainFilter.Match(zoneName) {
+				return nil
+			}
+			result[zone.ID] = zoneName
+			return nil
+		},
+	)
 	return result, err
 }
 
