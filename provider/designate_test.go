@@ -63,7 +63,7 @@ func (c fakeDesignateClient) AddZone(zone zones.Zone) string {
 	return zone.ID
 }
 
-func (c fakeDesignateClient) ForEachZonePub(handler func(zone *zones.Zone) error) error {
+func (c fakeDesignateClient) ForEachZone(handler func(zone *zones.Zone) error) error {
 	for _, zone := range c.managedZones {
 		if err := handler(zone.zone); err != nil {
 			return err
@@ -80,6 +80,16 @@ func (c fakeDesignateClient) ForEachZonePriv(handler func(zone *zones.Zone) erro
 	}
 	return nil
 }
+
+func (c fakeDesignateClient) ForEachZonePub(handler func(zone *zones.Zone) error) error {
+	for _, zone := range c.managedZones {
+		if err := handler(zone.zone); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 
 func (c fakeDesignateClient) ForEachRecordSet(zoneID string, handler func(recordSet *recordsets.RecordSet) error) error {
 	zone := c.managedZones[zoneID]
