@@ -482,10 +482,10 @@ func (p designateProvider) upsertRecordSet(rs *recordSet, managedZones map[strin
 		}
 		return p.client.DeleteRecordSet(rs.zoneID, rs.recordSetID)
 	} else {
-		ttl := 0
+		//ttl := 0
 		opts := recordsets.UpdateOpts{
 			Records: records,
-			TTL:     &ttl,
+		//	TTL:     &ttl,
 		}
 		log.Infof("Updating records: %s/%s: %s", rs.dnsName, rs.recordType, strings.Join(records, ","))
 		if p.dryRun {
